@@ -1,0 +1,160 @@
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+class Task implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private String title;
+    private boolean isCompleted;
+
+    public Task(String title) {
+        this.title = title;
+        this.isCompleted = false;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public boolean isCompleted() {
+        return isCompleted;
+    }
+
+    public void markCompleted() {
+        this.isCompleted = true;
+    }
+
+    @Override
+    public String toString() {
+        return (isCompleted ? "[X] " : "[ ] ") + title;
+    }
+}
+
+public class TaskManager {
+    private static final String DATA_FILE = "tasks.dat";
+    private List<Task> tasks;
+    private Scanner scanner;
+
+    public TaskManager() {
+        tasks = loadTasks();
+        scanner = new Scanner(System.in);
+    }
+
+    public void start() {
+        System.out.println("=== Task Management System ===");
+
+        while (true) {
+            System.out.println("\n1. Add Task");
+            System.out.println("2. View Tasks");
+            System.out.println("3. Mark Task as Completed");
+            System.out.println("4. Delete Task");
+            System.out.println("5. Save and Exit");
+            System.out.print("Choose an option: ");
+
+            int choice = readInt();
+
+            switch (choice) {
+                case 1:
+                    addTask();
+                    break;
+                case 2:
+                    viewTasks();
+                    break;
+                case 3:
+                    completeTask();
+                    break;
+                case 4:
+                    deleteTask();
+                    break;
+                case 5:
+                    saveTasks();
+                    System.out.println("Tasks saved. Goodbye!");
+                    return;
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
+        }
+    }
+
+    private void addTask() {
+        System.out.print("Enter task title: ");
+        String title = scanner.nextLine();
+        tasks.add(new Task(title));
+        System.out.println("Task added!");
+    }
+
+    private void viewTasks() {
+        if (tasks.isEmpty()) {
+            System.out.println("No tasks available.");
+            return;
+        }
+        System.out.println("\nYour Tasks:");
+        for (int i = 0; i < tasks.size(); i++) {
+            System.out.printf("%d. %s%n", i + 1, tasks.get(i));
+        }
+    }
+
+    private void completeTask() {
+        viewTasks();
+        if (tasks.isEmpty()) return;
+        System.out.print("Enter task number to mark as completed: ");
+        int taskNum = readInt();
+        if (taskNum < 1 || taskNum > tasks.size()) {
+            System.out.println("Invalid task number.");
+        } else {
+            tasks.get(taskNum - 1).markCompleted();
+            System.out.println("Task marked as completed.");
+        }
+    }
+
+    private void deleteTask() {
+        viewTasks();
+        if (tasks.isEmpty()) return;
+        System.out.print("Enter task number to delete: ");
+        int taskNum = readInt();
+        if (taskNum < 1 || taskNum > tasks.size()) {
+            System.out.println("Invalid task number.");
+        } else {
+            tasks.remove(taskNum - 1);
+            System.out.println("Task deleted.");
+        }
+    }
+
+    private void saveTasks() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DATA_FILE))) {
+            oos.writeObject(tasks);
+        } catch (IOException e) {
+            System.out.println("Error saving tasks: " + e.getMessage());
+        }
+    }
+
+    private List<Task> loadTasks() {
+        File file = new File(DATA_FILE);
+        if (!file.exists()) {
+            return new ArrayList<>();
+        }
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            return (List<Task>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error loading tasks, starting fresh.");
+            return new ArrayList<>();
+        }
+    }
+
+    private int readInt() {
+        while (true) {
+            try {
+                String input = scanner.nextLine();
+                return Integer.parseInt(input.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Invalid number, try again: ");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        TaskManager manager = new TaskManager();
+        manager.start();
+    }
+}
